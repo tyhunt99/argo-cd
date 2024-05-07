@@ -171,6 +171,7 @@ export class App extends React.Component<
         for (const extension of systemExtensions) {
             extendedNavItems.push({
                 title: extension.title,
+                tooltip: extension.tooltip,
                 path: extension.path,
                 iconClassName: `fa ${extension.icon}`
             });

@@ -14,8 +14,8 @@ function registerResourceExtension(component: ExtensionComponent, group: string,
     extensions.resourceExtentions.push({component, group, kind, title: tabTitle, icon: opts?.icon});
 }
 
-function registerSystemLevelExtension(component: ExtensionComponent, title: string, path: string, icon: string) {
-    extensions.systemLevelExtensions.push({component, title, icon, path});
+function registerSystemLevelExtension(component: ExtensionComponent, title: string, path: string, icon: string, tooltip?: string) {
+    extensions.systemLevelExtensions.push({component, title, tooltip, icon, path});
 }
 
 function registerAppViewExtension(component: ExtensionComponent, title: string, icon: string) {
@@ -51,6 +51,7 @@ export interface ResourceTabExtension {
 export interface SystemLevelExtension {
     title: string;
     component: SystemExtensionComponent;
+    tooltip?: string;
     icon?: string;
     path?: string;
 }
