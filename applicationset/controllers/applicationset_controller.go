@@ -41,7 +41,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/argoproj/argo-cd/v2/applicationset/generators"
 	"github.com/argoproj/argo-cd/v2/applicationset/utils"
@@ -623,7 +622,7 @@ func (r *ApplicationSetReconciler) SetupWithManager(mgr ctrl.Manager, enableProg
 		Owns(&argov1alpha1.Application{}, builder.WithPredicates(ownsHandler)).
 		WithEventFilter(ignoreNotAllowedNamespaces(r.ApplicationSetNamespaces)).
 		Watches(
-			&source.Kind{Type: &corev1.Secret{}},
+			&corev1.Secret{},
 			&clusterSecretEventHandler{
 				Client: mgr.GetClient(),
 				Log:    log.WithField("type", "createSecretEventHandler"),
@@ -1454,7 +1453,7 @@ func cleanupDeletedApplicationStatuses(statusMap map[string]argov1alpha1.Resourc
 	}
 }
 
-// setApplicationSetApplicationStatus updates the ApplicatonSet's status field
+// setApplicationSetApplicationStatus updates the ApplicationSet's status field
 // with any new/changed Application statuses.
 func (r *ApplicationSetReconciler) setAppSetApplicationStatus(ctx context.Context, logCtx *log.Entry, applicationSet *argov1alpha1.ApplicationSet, applicationStatuses []argov1alpha1.ApplicationSetApplicationStatus) error {
 	needToUpdateStatus := false
@@ -1633,7 +1632,7 @@ func shouldRequeueApplicationSet(appOld *argov1alpha1.Application, appNew *argov
 	// the applicationset controller owns the application spec, labels, annotations, and finalizers on the applications
 	// reflect.DeepEqual considers nil slices/maps not equal to empty slices/maps
 	// https://pkg.go.dev/reflect#DeepEqual
-	// ApplicationDestination has an unexported field so we can just use the == for comparsion
+	// ApplicationDestination has an unexported field so we can just use the == for comparison
 	if !cmp.Equal(appOld.Spec, appNew.Spec, cmpopts.EquateEmpty(), cmpopts.EquateComparable(argov1alpha1.ApplicationDestination{})) ||
 		!cmp.Equal(appOld.ObjectMeta.GetAnnotations(), appNew.ObjectMeta.GetAnnotations(), cmpopts.EquateEmpty()) ||
 		!cmp.Equal(appOld.ObjectMeta.GetLabels(), appNew.ObjectMeta.GetLabels(), cmpopts.EquateEmpty()) ||

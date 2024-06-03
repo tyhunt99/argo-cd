@@ -350,7 +350,7 @@ the API server -- one for gRPC and the other for HTTP/HTTPS. However it allows T
 happen at the ingress controller.
 
 
-## [Traefik (v2.2)](https://docs.traefik.io/)
+## [Traefik (v3.0)](https://docs.traefik.io/)
 
 Traefik can be used as an edge router and provide [TLS](https://docs.traefik.io/user-guides/grpc/) termination within the same deployment.
 
@@ -360,7 +360,7 @@ The API server should be run with TLS disabled. Edit the `argocd-server` deploym
 
 ### IngressRoute CRD
 ```yaml
-apiVersion: traefik.containo.us/v1alpha1
+apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   name: argocd-server
@@ -376,7 +376,7 @@ spec:
         - name: argocd-server
           port: 80
     - kind: Rule
-      match: Host(`argocd.example.com`) && Headers(`Content-Type`, `application/grpc`)
+      match: Host(`argocd.example.com`) && Header(`Content-Type`, `application/grpc`)
       priority: 11
       services:
         - name: argocd-server
@@ -492,7 +492,7 @@ spec:
        - --staticassets
        - /shared/app
        - --redis
-       - argocd-redis-ha-haproxy:6379
+       - argocd-redis:6379
        - --insecure
        - --basehref
        - /argocd
@@ -510,7 +510,7 @@ After that install Argo CD  (there should be only 3 yml file defined above in cu
 kubectl apply -k ./ -n argocd --wait=true
 ```
 
-Be sure you create secret for Isito ( in our case secretname is argocd-server-tls on argocd Namespace). After that we create Istio Resources
+Be sure you create secret for Istio ( in our case secretname is argocd-server-tls on argocd Namespace). After that we create Istio Resources
 
 ```yaml
 apiVersion: networking.istio.io/v1alpha3

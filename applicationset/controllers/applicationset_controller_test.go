@@ -23,6 +23,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
+	crtcache "sigs.k8s.io/controller-runtime/pkg/cache"
 	crtclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -66,7 +67,7 @@ type fakeCache struct {
 	cache.Cache
 }
 
-func (f *fakeCache) GetInformer(ctx context.Context, obj crtclient.Object) (cache.Informer, error) {
+func (f *fakeCache) GetInformer(ctx context.Context, obj crtclient.Object, opt ...crtcache.InformerGetOption) (cache.Informer, error) {
 	return &fakeInformer{}, nil
 }
 
@@ -2439,7 +2440,7 @@ func TestReconcilerValidationProjectErrorBehaviour(t *testing.T) {
 	argoDBMock := dbmocks.ArgoDB{}
 	argoObjs := []runtime.Object{&project}
 
-	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&appSet).WithIndex(&v1alpha1.Application{}, ".metadata.controller", appControllerIndexer).Build()
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&appSet).WithStatusSubresource(&appSet).WithIndex(&v1alpha1.Application{}, ".metadata.controller", appControllerIndexer).Build()
 	goodCluster := v1alpha1.Cluster{Server: "https://good-cluster", Name: "good-cluster"}
 	badCluster := v1alpha1.Cluster{Server: "https://bad-cluster", Name: "bad-cluster"}
 	argoDBMock.On("GetCluster", mock.Anything, "https://good-cluster").Return(&goodCluster, nil)
@@ -2535,7 +2536,7 @@ func TestReconcilerCreateAppsRecoveringRenderError(t *testing.T) {
 	argoDBMock := dbmocks.ArgoDB{}
 	argoObjs := []runtime.Object{&project}
 
-	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&appSet).WithIndex(&v1alpha1.Application{}, ".metadata.controller", appControllerIndexer).Build()
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&appSet).WithStatusSubresource(&appSet).WithIndex(&v1alpha1.Application{}, ".metadata.controller", appControllerIndexer).Build()
 
 	r := ApplicationSetReconciler{
 		Client:   client,
@@ -2678,7 +2679,7 @@ func applicationsUpdateSyncPolicyTest(t *testing.T, applicationsSyncPolicy v1alp
 	argoDBMock := dbmocks.ArgoDB{}
 	argoObjs := []runtime.Object{&defaultProject}
 
-	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&appSet).WithIndex(&v1alpha1.Application{}, ".metadata.controller", appControllerIndexer).Build()
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&appSet).WithStatusSubresource(&appSet).WithIndex(&v1alpha1.Application{}, ".metadata.controller", appControllerIndexer).Build()
 	goodCluster := v1alpha1.Cluster{Server: "https://good-cluster", Name: "good-cluster"}
 	argoDBMock.On("GetCluster", mock.Anything, "https://good-cluster").Return(&goodCluster, nil)
 	argoDBMock.On("ListClusters", mock.Anything).Return(&v1alpha1.ClusterList{Items: []v1alpha1.Cluster{
@@ -2848,7 +2849,7 @@ func applicationsDeleteSyncPolicyTest(t *testing.T, applicationsSyncPolicy v1alp
 	argoDBMock := dbmocks.ArgoDB{}
 	argoObjs := []runtime.Object{&defaultProject}
 
-	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&appSet).WithIndex(&v1alpha1.Application{}, ".metadata.controller", appControllerIndexer).Build()
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&appSet).WithStatusSubresource(&appSet).WithIndex(&v1alpha1.Application{}, ".metadata.controller", appControllerIndexer).Build()
 	goodCluster := v1alpha1.Cluster{Server: "https://good-cluster", Name: "good-cluster"}
 	argoDBMock.On("GetCluster", mock.Anything, "https://good-cluster").Return(&goodCluster, nil)
 	argoDBMock.On("ListClusters", mock.Anything).Return(&v1alpha1.ClusterList{Items: []v1alpha1.Cluster{
@@ -3169,7 +3170,7 @@ func TestPolicies(t *testing.T) {
 				},
 			}
 
-			client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&appSet).WithIndex(&v1alpha1.Application{}, ".metadata.controller", appControllerIndexer).Build()
+			client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&appSet).WithStatusSubresource(&appSet).WithIndex(&v1alpha1.Application{}, ".metadata.controller", appControllerIndexer).Build()
 
 			r := ApplicationSetReconciler{
 				Client:   client,
@@ -3332,7 +3333,7 @@ func TestSetApplicationSetApplicationStatus(t *testing.T) {
 
 		t.Run(cc.name, func(t *testing.T) {
 
-			client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&cc.appSet).Build()
+			client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&cc.appSet).WithStatusSubresource(&cc.appSet).Build()
 
 			r := ApplicationSetReconciler{
 				Client:   client,
@@ -4112,7 +4113,7 @@ func TestBuildAppDependencyList(t *testing.T) {
 			}
 
 			appDependencyList, appStepMap, err := r.buildAppDependencyList(log.NewEntry(log.StandardLogger()), cc.appSet, cc.apps)
-			assert.Equal(t, err, nil, "expected no errors, but errors occured")
+			assert.Equal(t, err, nil, "expected no errors, but errors occurred")
 			assert.Equal(t, cc.expectedList, appDependencyList, "expected appDependencyList did not match actual")
 			assert.Equal(t, cc.expectedStepMap, appStepMap, "expected appStepMap did not match actual")
 		})
@@ -4706,7 +4707,7 @@ func TestBuildAppSyncMap(t *testing.T) {
 			}
 
 			appSyncMap, err := r.buildAppSyncMap(context.TODO(), cc.appSet, cc.appDependencyList, cc.appMap)
-			assert.Equal(t, err, nil, "expected no errors, but errors occured")
+			assert.Equal(t, err, nil, "expected no errors, but errors occurred")
 			assert.Equal(t, cc.expectedMap, appSyncMap, "expected appSyncMap did not match actual")
 		})
 	}
@@ -5352,7 +5353,7 @@ func TestUpdateApplicationSetApplicationStatus(t *testing.T) {
 			argoDBMock := dbmocks.ArgoDB{}
 			argoObjs := []runtime.Object{}
 
-			client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&cc.appSet).Build()
+			client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&cc.appSet).WithStatusSubresource(&cc.appSet).Build()
 
 			r := ApplicationSetReconciler{
 				Client:           client,
@@ -5372,7 +5373,7 @@ func TestUpdateApplicationSetApplicationStatus(t *testing.T) {
 				appStatuses[i].LastTransitionTime = nil
 			}
 
-			assert.Equal(t, err, nil, "expected no errors, but errors occured")
+			assert.Equal(t, err, nil, "expected no errors, but errors occurred")
 			assert.Equal(t, cc.expectedAppStatus, appStatuses, "expected appStatuses did not match actual")
 		})
 	}
@@ -6106,7 +6107,7 @@ func TestUpdateApplicationSetApplicationStatusProgress(t *testing.T) {
 			argoDBMock := dbmocks.ArgoDB{}
 			argoObjs := []runtime.Object{}
 
-			client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&cc.appSet).Build()
+			client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&cc.appSet).WithStatusSubresource(&cc.appSet).Build()
 
 			r := ApplicationSetReconciler{
 				Client:           client,
@@ -6126,7 +6127,7 @@ func TestUpdateApplicationSetApplicationStatusProgress(t *testing.T) {
 				appStatuses[i].LastTransitionTime = nil
 			}
 
-			assert.Equal(t, err, nil, "expected no errors, but errors occured")
+			assert.Equal(t, err, nil, "expected no errors, but errors occurred")
 			assert.Equal(t, cc.expectedAppStatus, appStatuses, "expected appStatuses did not match actual")
 		})
 	}
@@ -6324,7 +6325,7 @@ func TestUpdateResourceStatus(t *testing.T) {
 			argoDBMock := dbmocks.ArgoDB{}
 			argoObjs := []runtime.Object{}
 
-			client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&cc.appSet).Build()
+			client := fake.NewClientBuilder().WithScheme(scheme).WithStatusSubresource(&cc.appSet).WithObjects(&cc.appSet).Build()
 
 			r := ApplicationSetReconciler{
 				Client:           client,
@@ -6339,7 +6340,7 @@ func TestUpdateResourceStatus(t *testing.T) {
 
 			err := r.updateResourcesStatus(context.TODO(), log.NewEntry(log.StandardLogger()), &cc.appSet, cc.apps)
 
-			assert.Equal(t, err, nil, "expected no errors, but errors occured")
+			assert.Equal(t, err, nil, "expected no errors, but errors occurred")
 			assert.Equal(t, cc.expectedResources, cc.appSet.Status.Resources, "expected resources did not match actual")
 		})
 	}
